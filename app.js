@@ -6,6 +6,16 @@ const logger = require("morgan");
 
 const indexRouter = require("./routes/index");
 
+// Set up mongoose connection
+const mongoose = require("mongoose");
+mongoose.set("strictQuery", false);
+const mongoDB = process.env.MONGO_URL;
+
+main().catch((err) => console.log(err));
+async function main() {
+  await mongoose.connect(mongoDB);
+}
+
 const app = express();
 
 app.use(logger("dev"));
