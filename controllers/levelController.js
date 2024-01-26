@@ -18,7 +18,17 @@ exports.levelDetails = asyncHandler(async (req, res, next) => {
 
 // Get level leaderboard
 exports.leaderboardGET = asyncHandler(async (req, res, next) => {
-  res.json({ msg: "Not yet implemented" });
+  const leaderboard = await Leaderboard.findOne({
+    level: req.params.levelId,
+  }).exec();
+
+  if (!leaderboard) {
+    const err = new Error("Leaderboard not found");
+    err.status = 404;
+    return next(err);
+  }
+
+  res.json(leaderboard);
 });
 
 // POST score to level leaderboard
