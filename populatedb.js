@@ -99,15 +99,15 @@ async function createLeaderboards() {
     leaderboardCreate(0, levels[0], [
       {
         name: "Anon",
+        score: 170,
+      },
+      {
+        name: "Anon",
         score: 200,
       },
       {
         name: "Anon",
         score: 233,
-      },
-      {
-        name: "Anon",
-        score: 170,
       },
       {
         name: "Anon",
