@@ -4,7 +4,11 @@ const asyncHandler = require("express-async-handler");
 
 // Get list of all levels
 exports.levelList = asyncHandler(async (req, res, next) => {
-  res.json({ msg: "Not yet implemented" });
+  const levels = await Level.find({}, "levelNum imageUrl")
+    .sort({ levelNum: 1 })
+    .exec();
+
+  res.json(levels);
 });
 
 // Get level details
