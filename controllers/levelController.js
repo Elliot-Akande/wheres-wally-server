@@ -1,6 +1,8 @@
 const Level = require("../models/level");
 const Leaderboard = require("../models/leaderboard");
 const asyncHandler = require("express-async-handler");
+const jwt = require("jsonwebtoken");
+const { v4: uuid } = require("uuid");
 
 // Get list of all levels
 exports.levelList = asyncHandler(async (req, res, next) => {
@@ -13,15 +15,20 @@ exports.levelList = asyncHandler(async (req, res, next) => {
 
 // Get level details
 exports.levelDetails = asyncHandler(async (req, res, next) => {
-  const level = await Level.findById(req.params.levelId).exec();
+  const data = await Level.findById(req.params.levelId).exec();
 
-  if (!level) {
+  if (!data) {
     const err = new Error("Level not found");
     err.status = 404;
     return next(err);
   }
 
-  res.json(level);
+  const userId = uuid();
+
+  const token = jwt.sign({ cur: userId }, process.env.JWT_KEY, (err, token) => {
+    if (err) return next(err);
+    return res.json({ token, data });
+  });
 });
 
 // Get level leaderboard
