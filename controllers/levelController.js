@@ -13,7 +13,15 @@ exports.levelList = asyncHandler(async (req, res, next) => {
 
 // Get level details
 exports.levelDetails = asyncHandler(async (req, res, next) => {
-  res.json({ msg: "Not yet implemented" });
+  const level = await Level.findById(req.params.levelId).exec();
+
+  if (!level) {
+    const err = new Error("Level not found");
+    err.status = 404;
+    return next(err);
+  }
+
+  res.json(level);
 });
 
 // Get level leaderboard
