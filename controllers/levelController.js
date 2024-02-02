@@ -24,9 +24,7 @@ exports.levelDetails = asyncHandler(async (req, res, next) => {
     return next(err);
   }
 
-  const userId = uuid();
-
-  const token = jwt.sign({ cur: userId }, process.env.JWT_KEY, (err, token) => {
+  jwt.sign({}, process.env.JWT_KEY, (err, token) => {
     if (err) return next(err);
     return res.json({ token, data });
   });
@@ -105,6 +103,91 @@ exports.checkAnswer = [
 ];
 
 // POST request for checking a level is complete
-exports.checkComplete = asyncHandler(async (req, res, next) => {
-  res.json({ msg: "Not yet implemented" });
-});
+exports.checkComplete = [
+  body("answers", "Answers must be present and must be an array").isArray(),
+  body("answers.*.character", "Character must be present")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
+  body("answers.*.xCoord", "xCoord must be an integer of 0 or more")
+    .trim()
+    .isInt({ min: 0 }),
+  body("answers.*.yCoord", "yCoord must be an integer of 0 or more")
+    .trim()
+    .isInt({ min: 0 }),
+
+  // Parse JWT
+  asyncHandler(async (req, res, next) => {
+    // Check JWT is present
+    const bearerHeader = req.headers.authorization;
+    if (typeof bearerHeader === "undefined") {
+      const err = new Error("Forbidden");
+      err.status = 403;
+      return next(err);
+    }
+
+    // Verify token
+    const token = bearerHeader.split(" ")[1];
+    jwt.verify(token, process.env.JWT_KEY, (err, data) => {
+      if (err) {
+        const error = new Error("Invalid token");
+        error.status = 403;
+        return next(error);
+      }
+      req.token = token;
+      req.startTime = data.iat;
+      next();
+    });
+  }),
+
+  // Check level is complete
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Check level exists
+    const level = await Level.findById(req.params.levelId).exec();
+    if (!level) {
+      const err = new Error("Level not found");
+      err.status = 404;
+      return next(err);
+    }
+
+    const isCorrectAnswer = (correctAnswer, userAnswer) => {
+      const deltaX = correctAnswer.xCoord - userAnswer.xCoord;
+      const deltaY = correctAnswer.yCoord - userAnswer.yCoord;
+      return deltaX ** 2 + deltaY ** 2 <= correctAnswer.size ** 2;
+    };
+
+    // Check answers are correct
+    const { answers } = req.body;
+    level.answers.forEach((correctAnswer) => {
+      const userAnswer = answers.find(
+        (answer) => answer.character === correctAnswer.character
+      );
+
+      if (
+        typeof userAnswer === "undefined" ||
+        !isCorrectAnswer(correctAnswer, userAnswer)
+      ) {
+        return res.json({ isComplete: false });
+      }
+    });
+
+    const finishTime = Math.round(new Date().getTime() / 1000);
+    jwt.sign(
+      { startTime: req.startTime, finishTime },
+      process.env.JWT_KEY,
+      (err, newToken) => {
+        if (err) return next(err);
+        return res.json({
+          token: newToken,
+          score: finishTime - req.startTime,
+          isComplete: true,
+        });
+      }
+    );
+  }),
+];
