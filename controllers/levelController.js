@@ -62,9 +62,12 @@ exports.leaderboardGET = asyncHandler(async (req, res, next) => {
   }
 
   // Get leaderboard
-  const leaderboard = await Leaderboard.findOne({
-    level: level.id,
-  }).exec();
+  const leaderboard = await Leaderboard.findOne(
+    {
+      level: level.id,
+    },
+    { scores: 1 }
+  ).exec();
   if (!leaderboard) {
     const err = new Error("Leaderboard not found");
     err.status = 404;
