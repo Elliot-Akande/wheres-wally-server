@@ -6,18 +6,18 @@ const levelController = require("../controllers/levelController");
 router.get("/", levelController.levelList);
 
 // Get level details
-router.get("/:levelId", levelController.levelDetails);
+router.get("/:levelNum", levelController.levelDetails);
 
 // Get level leaderboard
-router.get("/:levelId/leaderboard", levelController.leaderboardGET);
+router.get("/:levelNum/leaderboard", levelController.leaderboardGET);
 
 // POST score to level leaderboard
-router.post("/:levelId/leaderboard", levelController.leaderboardPOST);
+router.post("/:levelNum/leaderboard", levelController.leaderboardPOST);
 
 // POST request for checking an answer is correct
-router.post("/:levelId/check-answer", levelController.checkAnswer);
+router.post("/:levelNum/check-answer", levelController.checkAnswer);
 
 // POST request for checking a level is complete
-router.post("/:levelId/check-complete", levelController.checkComplete);
+router.post("/:levelNum/check-complete", levelController.checkComplete);
 
 module.exports = router;

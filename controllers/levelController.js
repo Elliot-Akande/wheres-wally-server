@@ -37,7 +37,7 @@ exports.levelList = asyncHandler(async (req, res, next) => {
 
 // GET level details
 exports.levelDetails = asyncHandler(async (req, res, next) => {
-  const data = await Level.findById(req.params.levelId).exec();
+  const data = await Level.findOne({ levelNum: req.params.levelNum }).exec();
 
   if (!data) {
     const err = new Error("Level not found");
@@ -53,10 +53,18 @@ exports.levelDetails = asyncHandler(async (req, res, next) => {
 
 // GET level leaderboard
 exports.leaderboardGET = asyncHandler(async (req, res, next) => {
-  const leaderboard = await Leaderboard.findOne({
-    level: req.params.levelId,
-  }).exec();
+  // Get level id
+  const level = await Level.findOne({ levelNum: req.params.levelNum }).exec();
+  if (!level) {
+    const err = new Error("Level not found");
+    err.status = 404;
+    return next(err);
+  }
 
+  // Get leaderboard
+  const leaderboard = await Leaderboard.findOne({
+    level: level.id,
+  }).exec();
   if (!leaderboard) {
     const err = new Error("Leaderboard not found");
     err.status = 404;
@@ -84,9 +92,17 @@ exports.leaderboardPOST = [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // Check level exists
+    // Get level id
+    const level = await Level.findOne({ levelNum: req.params.levelNum }).exec();
+    if (!level) {
+      const err = new Error("Level not found");
+      err.status = 404;
+      return next(err);
+    }
+
+    // Get leaderboard data
     const leaderboard = await Leaderboard.findOne({
-      level: req.params.levelId,
+      level: level.id,
     }).exec();
     if (!leaderboard) {
       const err = new Error("Level not found");
@@ -148,7 +164,7 @@ exports.checkAnswer = [
 
     const { character, xCoord, yCoord } = req.body;
     const data = await Level.findOne(
-      { "answers.character": character },
+      { levelNum: req.params.levelNum, "answers.character": character },
       { "answers.$": 1 }
     ).exec();
 
@@ -201,7 +217,7 @@ exports.checkComplete = [
     }
 
     // Check level exists
-    const level = await Level.findById(req.params.levelId).exec();
+    const level = await Level.findOne({ levelNum: req.params.levelNum }).exec();
     if (!level) {
       const err = new Error("Level not found");
       err.status = 404;
